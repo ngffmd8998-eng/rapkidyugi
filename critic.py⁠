@@ -1,0 +1,63 @@
+from rhyme_analyzer import RhymeAnalyzer
+from meter_analyzer import MeterAnalyzer
+from anticliche_detector import AntiClicheDetector
+
+class Critic:
+    """
+    Sistema di valutazione complessivo (Overall Critic).
+    Combina gli analizzatori e genera punteggio totale e feedback puntuali per la rigenerazione.
+    """
+    def __init__(self):
+        self.rhyme_analyzer = RhymeAnalyzer()
+        self.meter_analyzer = MeterAnalyzer()
+        self.anticliche_detector = AntiClicheDetector()
+
+    def evaluate(self, text: str, params: dict) -> dict:
+        rhyme_res = self.rhyme_analyzer.analyze_text(text)
+        meter_res = self.meter_analyzer.analyze(text, target_bpm=params.get('bpm', 140))
+        cliche_res = self.anticliche_detector.analyze(text)
+
+        lines = [l for l in text.split('\n') if l.strip() and not l.startswith("[")]
+        generated_bars = len(lines)
+        expected_bars = params.get('barre', 16)
+
+        bars_diff = abs(generated_bars - expected_bars)
+        bar_precision_score = 10.0 if bars_diff == 0 else max(0.0, 10.0 - (bars_diff * 2.0))
+
+        # Ponderazione Punteggio Totale
+        total_score = round(
+            (rhyme_res['rhyme_score'] * 0.35) +
+            (meter_res['metric_score'] * 0.25) +
+            (cliche_res['anticliche_score'] * 0.25) +
+            (bar_precision_score * 0.15), 1
+        )
+
+        # Costruzione feedback specifico in caso di score basso
+        feedback_list = []
+        if bar_precision_score < 10.0:
+            feedback_list.append(f"Genera esattamente {expected_bars} barre (ne hai generate {generated_bars}).")
+        if rhyme_res['rhyme_score'] < 6.0:
+            feedback_list.append("Aumenta la densità di rime interne e incastri multisillabici.")
+        if meter_res['metric_score'] < 6.0:
+            feedback_list.append("Rendi la lunghezza delle barre più omogenea per il tempo indicato.")
+        if cliche_res['detected_cliches']:
+            cliches_str = ", ".join(cliche_res['detected_cliches'])
+            feedback_list.append(f"Rimuovi questi cliché generici AI: {cliches_str}.")
+
+        return {
+            "total_score": total_score,
+            "rhyme_score": rhyme_res['rhyme_score'],
+            "metric_score": meter_res['metric_score'],
+            "anticliche_score": cliche_res['anticliche_score'],
+            "bar_precision_score": bar_precision_score,
+            "feedback": feedback_list,
+            "details": {
+                "generated_bars": generated_bars,
+                "expected_bars": expected_bars,
+                "end_rhymes": rhyme_res['end_rhymes'],
+                "assonnances": rhyme_res['assonnances'],
+                "internal_rhymes": rhyme_res['internal_rhymes'],
+                "avg_syllables": meter_res['avg_syllables'],
+                "detected_cliches": cliche_res['detected_cliches']
+            }
+        }
