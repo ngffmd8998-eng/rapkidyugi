@@ -1,0 +1,26 @@
+# Configurazione dei 14 parametri stilistici e parametri di sistema
+
+DEFAULT_STYLE_PROFILE = {
+    "DARKNESS": 0.9,
+    "SLANG": 0.7,
+    "EXPLICITNESS": 0.8,
+    "METAPHOR_DENSITY": 0.85,
+    "PUNCHLINE_DENSITY": 0.8,
+    "INTERNAL_RHYME_DENSITY": 0.9,
+    "MULTISYLLABIC_RHYME": 0.9,
+    "WORDPLAY": 0.7,
+    "STORYTELLING": 0.3,
+    "FLOW_COMPLEXITY": 0.8,
+    "VOCABULARY_COMPLEXITY": 0.85,
+    "CULTURAL_REFERENCES": 0.85,
+    "IMAGE_DENSITY": 0.9,
+    "EMOTIONAL_INTENSITY": 0.8
+}
+
+DEFAULT_GENERATION_PARAMS = {
+    "tema": "Mortalità, blocco e ambizione",
+    "bpm": 140,
+    "barre": 16,
+    "struttura": "Strofa singola",
+    "style_profile": DEFAULT_STYLE_PROFILE
+}
