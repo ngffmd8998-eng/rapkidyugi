@@ -1,0 +1,96 @@
+import gradio as gr
+from generate import RapGenerator
+
+generator = RapGenerator()
+
+def generate_rap_ui(tema, bpm, barre, darkness, slang, explicitness, metaphor, 
+                    punchline, internal_rhymes, multisyllabic, wordplay, 
+                    storytelling, flow_comp, vocab_comp, cultural_ref, image_dens, emo_intens):
+    
+    style_profile = {
+        "DARKNESS": darkness,
+        "SLANG": slang,
+        "EXPLICITNESS": explicitness,
+        "METAPHOR_DENSITY": metaphor,
+        "PUNCHLINE_DENSITY": punchline,
+        "INTERNAL_RHYME_DENSITY": internal_rhymes,
+        "MULTISYLLABIC_RHYME": multisyllabic,
+        "WORDPLAY": wordplay,
+        "STORYTELLING": storytelling,
+        "FLOW_COMPLEXITY": flow_comp,
+        "VOCABULARY_COMPLEXITY": vocab_comp,
+        "CULTURAL_REFERENCES": cultural_ref,
+        "IMAGE_DENSITY": image_dens,
+        "EMOTIONAL_INTENSITY": emo_intens
+    }
+
+    params = {
+        "tema": tema,
+        "bpm": int(bpm),
+        "barre": int(barre),
+        "style_profile": style_profile
+    }
+
+    text, eval_res = generator.generate(params)
+
+    feedback_text = "\n".join([f"- {f}" for f in eval_res['feedback']]) if eval_res['feedback'] else "- Nessun problema rilevato."
+
+    score_report = f"""
+### 📊 Report Analitico del Critic:
+* **Punteggio Totale:** `{eval_res['total_score']} / 10`
+* **Precisione Barre:** `{eval_res['bar_precision_score']} / 10` ({eval_res['details']['generated_bars']}/{eval_res['details']['expected_bars']})
+* **Qualità Rime:** `{eval_res['rhyme_score']} / 10`
+* **Metricità & Tempo:** `{eval_res['metric_score']} / 10`
+* **Anti-Cliché Score:** `{eval_res['anticliche_score']} / 10`
+
+---
+#### ⚠️ Feedback per Rigenerazione:
+{feedback_text}
+"""
+
+    return text, score_report
+
+with gr.Blocks(title="AI Rap Writer Italia", theme=gr.themes.Soft()) as app:
+    gr.Markdown("# 🎤 AI Rap Writer Italiano - Control Engine")
+
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("### ⚙️ Impostazioni Strutturali")
+            tema = gr.Textbox(label="Tema principale", value="Mortalità, blocco e ambizione")
+            bpm = gr.Slider(minimum=80, maximum=180, value=140, step=1, label="BPM Beat")
+            barre = gr.Slider(minimum=4, maximum=32, value=16, step=2, label="Numero Barre")
+
+            gr.Markdown("### 🎛️ Matrice dei 14 Parametri Stilistici")
+            darkness = gr.Slider(0.0, 1.0, value=0.9, step=0.05, label="DARKNESS")
+            slang = gr.Slider(0.0, 1.0, value=0.7, step=0.05, label="SLANG")
+            explicitness = gr.Slider(0.0, 1.0, value=0.8, step=0.05, label="EXPLICITNESS")
+            metaphor = gr.Slider(0.0, 1.0, value=0.85, step=0.05, label="METAPHOR_DENSITY")
+            punchline = gr.Slider(0.0, 1.0, value=0.8, step=0.05, label="PUNCHLINE_DENSITY")
+            internal_rhymes = gr.Slider(0.0, 1.0, value=0.9, step=0.05, label="INTERNAL_RHYME_DENSITY")
+            multisyllabic = gr.Slider(0.0, 1.0, value=0.9, step=0.05, label="MULTISYLLABIC_RHYME")
+            wordplay = gr.Slider(0.0, 1.0, value=0.7, step=0.05, label="WORDPLAY")
+            storytelling = gr.Slider(0.0, 1.0, value=0.3, step=0.05, label="STORYTELLING")
+            flow_comp = gr.Slider(0.0, 1.0, value=0.8, step=0.05, label="FLOW_COMPLEXITY")
+            vocab_comp = gr.Slider(0.0, 1.0, value=0.85, step=0.05, label="VOCABULARY_COMPLEXITY")
+            cultural_ref = gr.Slider(0.0, 1.0, value=0.85, step=0.05, label="CULTURAL_REFERENCES")
+            image_dens = gr.Slider(0.0, 1.0, value=0.9, step=0.05, label="IMAGE_DENSITY")
+            emo_intens = gr.Slider(0.0, 1.0, value=0.8, step=0.05, label="EMOTIONAL_INTENSITY")
+
+            btn_generate = gr.Button("⚡ Genera e Analizza Testo", variant="primary")
+
+        with gr.Column(scale=1):
+            output_text = gr.TextArea(label="Testo Generato", lines=16)
+            output_score = gr.Markdown(label="Report del Critico")
+
+    btn_generate.click(
+        fn=generate_rap_ui,
+        inputs=[
+            tema, bpm, barre, darkness, slang, explicitness, metaphor, 
+            punchline, internal_rhymes, multisyllabic, wordplay, 
+            storytelling, flow_comp, vocab_comp, cultural_ref, image_dens, emo_intens
+        ],
+        outputs=[output_text, output_score]
+    )
+
+if __name__ == "__main__":
+    app.launch(share=True)
