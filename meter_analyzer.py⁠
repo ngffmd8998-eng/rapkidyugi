@@ -1,0 +1,53 @@
+import re
+
+class MeterAnalyzer:
+    """
+    Analizzatore metrico per il calcolo delle sillabe per barra e regolarità del tempo.
+    """
+    VOWELS = "aeiouàèéìòóù"
+
+    def count_syllables_word(self, word: str) -> int:
+        word = word.lower().strip()
+        if not word:
+            return 0
+        word = re.sub(r'[^\w]', '', word)
+        if not word:
+            return 0
+
+        vowel_count = 0
+        i = 0
+        while i < len(word):
+            if word[i] in self.VOWELS:
+                vowel_count += 1
+                if i + 1 < len(word) and word[i+1] in self.VOWELS:
+                    i += 1
+            i += 1
+
+        return max(1, vowel_count)
+
+    def analyze(self, text: str, target_bpm: int = 140) -> dict:
+        lines = [line.strip() for line in text.split("\n") if line.strip() and not line.startswith("[")]
+        if not lines:
+            return {"metric_score": 0.0, "avg_syllables": 0.0, "variance": 0.0, "syllable_list": []}
+
+        syllable_counts = []
+        for line in lines:
+            line_clean = re.sub(r'([aeiouàèéìòóù])\s+([aeiouàèéìòóù])', r'\1\2', line.lower())
+            words = line_clean.split()
+            line_syllables = sum(self.count_syllables_word(w) for w in words)
+            syllable_counts.append(line_syllables)
+
+        avg_syllables = sum(syllable_counts) / len(syllable_counts)
+        variance = sum((x - avg_syllables) ** 2 for x in syllable_counts) / len(syllable_counts)
+
+        target_syllables = 14.0 if target_bpm >= 130 else 11.0
+        diff = abs(avg_syllables - target_syllables)
+
+        metric_score = max(0.0, 10.0 - (diff * 0.4) - (variance * 0.15))
+
+        return {
+            "metric_score": round(metric_score, 1),
+            "avg_syllables": round(avg_syllables, 1),
+            "variance": round(variance, 1),
+            "syllable_list": syllable_counts
+        }
