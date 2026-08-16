@@ -1,0 +1,82 @@
+import re
+
+class RhymeAnalyzer:
+    """
+    Analizzatore fonetico per misurare rime finali, assonanze e rime interne.
+    """
+    VOWELS = set('aeiouàèéìòóù')
+
+    def extract_rhyme_ending(self, word: str) -> str:
+        word = word.lower().strip(".,!?\"'()-")
+        if not word or len(word) < 2:
+            return ""
+
+        vowel_indices = [i for i, char in enumerate(word) if char in self.VOWELS]
+        if not vowel_indices:
+            return word
+
+        start_idx = vowel_indices[-2] if len(vowel_indices) >= 2 else vowel_indices[-1]
+        return word[start_idx:]
+
+    def get_vowel_sequence(self, word: str) -> str:
+        return "".join([c for c in word.lower() if c in self.VOWELS])
+
+    def analyze_text(self, text: str) -> dict:
+        lines = [line.strip() for line in text.split("\n") if line.strip() and not line.startswith("[")]
+        if not lines:
+            return {"rhyme_score": 0.0, "end_rhymes": 0, "internal_rhymes": 0, "assonnances": 0}
+
+        words_per_line = []
+        for line in lines:
+            clean_line = re.sub(r'[^\w\s]', '', line)
+            words = [w for w in clean_line.split() if w]
+            if words:
+                words_per_line.append(words)
+
+        if not words_per_line:
+            return {"rhyme_score": 0.0, "end_rhymes": 0, "internal_rhymes": 0, "assonnances": 0}
+
+        last_words = [w[-1] for w in words_per_line]
+        end_rhymes_count = 0
+        assonance_count = 0
+
+        for i in range(len(last_words) - 1):
+            w1, w2 = last_words[i].lower(), last_words[i+1].lower()
+            if w1 == w2:
+                continue
+
+            end1 = self.extract_rhyme_ending(w1)
+            end2 = self.extract_rhyme_ending(w2)
+
+            if end1 and end2 and end1 == end2 and len(end1) >= 2:
+                end_rhymes_count += 1
+            else:
+                v_seq1 = self.get_vowel_sequence(w1)[-2:]
+                v_seq2 = self.get_vowel_sequence(w2)[-2:]
+                if len(v_seq1) >= 2 and v_seq1 == v_seq2:
+                    assonance_count += 1
+
+        internal_rhymes_count = 0
+        for line_words in words_per_line:
+            if len(line_words) >= 4:
+                mid_words = [w.lower() for w in line_words[:-1]]
+                for i in range(len(mid_words)):
+                    for j in range(i + 1, len(mid_words)):
+                        if mid_words[i] == mid_words[j]:
+                            continue
+                        e1 = self.extract_rhyme_ending(mid_words[i])
+                        e2 = self.extract_rhyme_ending(mid_words[j])
+                        if e1 and e2 and e1 == e2 and len(e1) >= 3:
+                            internal_rhymes_count += 1
+
+        total_lines = len(lines)
+        max_possible = max(1, total_lines - 1)
+        rhyme_ratio = (end_rhymes_count + (assonance_count * 0.5)) / max_possible
+        rhyme_score = min(10.0, (rhyme_ratio * 7.0) + (internal_rhymes_count * 1.0))
+
+        return {
+            "rhyme_score": round(rhyme_score, 1),
+            "end_rhymes": end_rhymes_count,
+            "assonnances": assonance_count,
+            "internal_rhymes": internal_rhymes_count
+        }
